@@ -8,8 +8,8 @@ The files which need data to SEND & READ data simultaneously
 from os import path
 from sys import exit
 from time import sleep
-from typing import Any
 from threading import Thread
+from typing import Any, Callable
 from paho.mqtt.client import Client
 from configparser import ConfigParser
 
@@ -87,8 +87,11 @@ class DataManager:
     def get_data(self):
         return self.data
 
-    def serialize(self, serializer):
-        pass
+    def send_serialized(self, message, serializing_func):
+        frames = serializing_func(message)
+        self.set_data(frames)
+        self.publish()
+        
 
     def publish(self, sleep_time: float):
         if self.topic_pub is None:
