@@ -34,20 +34,16 @@ class Broker(Node):
         
 
 class Pub(Node):
-    def __init__(
-        self, topic, serializer="pickle", wait=0
-    ):
+    def __init__(self, topic, serializer="pickle", wait=0):
+        #Make another publisher
+        self._topic = topic.encode("utf-8")
+        self._serializer = getattr(timeflux.core.message, serializer + "_serialize")
+        try:
+            self.publisher = DataManager("$Another publisher profile")
+        except Exception as error:
+            self.logger.error(error)
 
-    # Make another publisher
-    self._topic = topic.encode('utf-8')
-    self._serializer = getattr(timeflux.core.message, serializer + "_serialize")
-
-    try:
-        publisher = DataManager("$Another publisher profile")
-
-    except Exception as error:
-        self.logger.error(error)
-    time.sleep(wait)
+        time.sleep(wait)
 
     def update(self):
         for name, suffix, port in self.iterate("i*"):
@@ -55,9 +51,13 @@ class Pub(Node):
                 if not suffix:
                     topic = self._topic
                 else:
-                    topic = self._topic + suffix.encode('utf-8')
+                    topic = self._topic + suffix.encode("utf-8")
                 try:
                     if not port.ready():
-                        port.data = None
-                    self.
+                        port.data = None  
+                    data = self._serializer([topic, port.data, port.meta])
+                    self._publisher.set_data(data)
+                    self._publisher.publish(0)  
+                except Exception as e:
+                    self.logger.error(e)
     
